@@ -106,8 +106,8 @@ export const waypoints = bfsPath(grid, {r:0, c:24}, {r:49, c:24});
 // ステージ定義
 // ------------------------------
 export const STAGE = {
-  map:    { tiles:g, rows:CONFIG.MAP_ROWS, cols:CONFIG.MAP_COLS, tileSize:CONFIG.TILE_SIZE },
+  map:    { tiles: grid, rows: CONFIG.MAP_ROWS, cols: CONFIG.MAP_COLS, tileSize: CONFIG.TILE_SIZE },
   path:   { waypoints },
   waves:  CONFIG.WAVES,
-  initial:{ gold:CONFIG.INITIAL_GOLD, lives:CONFIG.INITIAL_LIVES }
+  initial:{ gold: CONFIG.INITIAL_GOLD, lives: CONFIG.INITIAL_LIVES }
 };
