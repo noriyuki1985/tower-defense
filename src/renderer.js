@@ -1,12 +1,16 @@
-// src/renderer.js
-// --------------------------------------------------
-// Canvas 描画ヘルパー（ステージを外からセット可能に）
-// --------------------------------------------------
-import { assetLoader } from './rendererAssets.js'; // ← 画像ローダは分離済みと仮定
+// ────────────────────────────────────
+// ファイル: src/renderer.js
+// ────────────────────────────────────
+import { assetLoader } from './rendererAssets.js';
 
 let ctx   = null;
-let stage = null;          // ← 現在の STAGE を保持
+let stage = null;
 
+/**
+ * Canvas 初期化時に呼ぶ
+ * @param {string} canvasId
+ * @param {object} stageObj
+ */
 export function initRenderer(canvasId, stageObj) {
   const canvas = document.getElementById(canvasId);
   canvas.width  = stageObj.map.cols * stageObj.map.tileSize;
@@ -15,11 +19,14 @@ export function initRenderer(canvasId, stageObj) {
   stage = stageObj;
 }
 
-export function setStage(stageObj) { stage = stageObj; }
+/** 外部からステージを差し替えたいときに呼ぶ */
+export function setStage(stageObj) {
+  stage = stageObj;
+}
 
-// ---------- 基本描画 ----------
 export function clear() {
-  ctx.clearRect(0, 0,
+  ctx.clearRect(
+    0, 0,
     stage.map.cols * stage.map.tileSize,
     stage.map.rows * stage.map.tileSize
   );
@@ -40,7 +47,8 @@ export function drawTower(t) {
   ctx.drawImage(
     assetLoader.images[t.spriteKey],
     t.x, t.y,
-    stage.map.tileSize, stage.map.tileSize
+    stage.map.tileSize,
+    stage.map.tileSize
   );
 }
 
@@ -48,7 +56,8 @@ export function drawEnemy(e) {
   ctx.drawImage(
     assetLoader.images[e.spriteKey],
     e.x, e.y,
-    stage.map.tileSize, stage.map.tileSize
+    stage.map.tileSize,
+    stage.map.tileSize
   );
 }
 
@@ -56,7 +65,8 @@ export function drawProjectile(p) {
   ctx.drawImage(
     assetLoader.images[p.spriteKey],
     p.x, p.y,
-    stage.map.tileSize / 2, stage.map.tileSize / 2
+    stage.map.tileSize / 2,
+    stage.map.tileSize / 2
   );
 }
 
