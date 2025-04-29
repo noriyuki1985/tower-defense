@@ -1,24 +1,20 @@
 // src/gameplay/wave.js
-// ----------------------------------
-// Wave / スポーン制御
-// ----------------------------------
-import { CONFIG, STAGE, waypoints } from '../config.js';
-import { Enemy } from './enemy.js';
 
 /**
- * 敵を spawn して playModel.enemies に追加する
- * @param {object} playModel 共有ゲーム状態
+ * playModel.spawnEnemy(type) を使って敵を順次出現させる
+ * @param {object} playModel  // must have spawnEnemy(type) and enemies[]
+ * @param {Array} waves       // 各 wave: { waveNo, delay, enemies:[{type,count,interval}] }
  */
-export function scheduleWaves(playModel) {
-  STAGE.waves.forEach((wave) => {
+export function scheduleWaves(playModel, waves) {
+  playModel.spawned = 0;
+  waves.forEach(wave => {
     setTimeout(() => {
-      wave.enemies.forEach((e) => {
-        for (let i = 0; i < e.count; i++) {
+      wave.enemies.forEach(eDef => {
+        for (let i = 0; i < eDef.count; i++) {
           setTimeout(() => {
-            const def = CONFIG.ENEMY_DEFINITIONS.find((d) => d.id === e.type);
-            playModel.enemies.push(new Enemy(def, waypoints));
+            playModel.spawnEnemy(eDef.type);
             playModel.spawned++;
-          }, i * e.interval);
+          }, i * eDef.interval);
         }
       });
     }, wave.delay);
