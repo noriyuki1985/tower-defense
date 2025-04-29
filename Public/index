@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tower Defense</title>
+    <!-- Favicon や OGP などは必要に応じて public/ に追加してください -->
+  </head>
+  <body>
+    <!-- ここにゲームが動的に挿入されます -->
+    <div id="app"></div>
+
+    <!-- Vite 開発サーバでは /src/main.js を読みこみ、
+         `vite build` 時には自動で書き換わったパスが入ります -->
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
