@@ -1,0 +1,37 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]      # main にコミットしたら自動デプロイ
+
+permissions:
+  contents: write         # gh-pages ブランチへの push 権限
+  pages: write            # GitHub Pages へのデプロイ権限
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci        # package.json から依存をインストール
+      - run: npm run build # dist/ フォルダを生成
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist     # 生成物をアーティファクトにまとめる
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4   # GitHub Pages へ公開
