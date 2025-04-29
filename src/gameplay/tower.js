@@ -18,7 +18,7 @@ export class Tower {
     if (now - this.lastFire < this.fireRate) return false;
 
     // 射程内の敵を検索
-    const inRange = enemies.filter(e => {
+    const inRange = enemies.filter((e) => {
       const dx = e.x - this.x;
       const dy = e.y - this.y;
       return Math.hypot(dx, dy) <= this.range * CONFIG.TILE_SIZE;
@@ -34,7 +34,9 @@ export class Tower {
     });
 
     // プロジェクタイル定義を CONFIG から取得
-    const pDef = CONFIG.PROJECTILE_DEFINITIONS.find(p => p.id === this.projectileType);
+    const pDef = CONFIG.PROJECTILE_DEFINITIONS.find(
+      (p) => p.id === this.projectileType
+    );
 
     projectiles.push({
       spriteKey: pDef.spriteKey,
