@@ -1,17 +1,17 @@
-// ────────────────────────────────────
-// ファイル: src/ui/sidebar.js
-// ────────────────────────────────────
+// src/ui/sidebar.js
+// ----------------------------------
+// Tower Defense: サイドバー（タワー設置 UI）
+// ----------------------------------
 import { CONFIG, grid } from '../config.js';
 
 /**
- * サイドバー（タワー設置 UI）を動的に生成して、
- * クリックでタワー設置できるようにする
+ * サイドバーを生成し、塔設置のクリック処理を登録
  * @param {HTMLCanvasElement} canvas
  * @param {object} playModel
  * @param {Function} render
  */
 export function initSidebar(canvas, playModel, render) {
-  // サイドバー要素を生成
+  // サイドバーコンテナ
   const sidebar = document.createElement('div');
   sidebar.id = 'sidebar';
   Object.assign(sidebar.style, {
@@ -32,6 +32,7 @@ export function initSidebar(canvas, playModel, render) {
 
   // タワー選択ボタン
   let selectedDef = null;
+  const selectedSpan = document.createElement('span');
   CONFIG.TOWER_DEFINITIONS.forEach(def => {
     const btn = document.createElement('button');
     btn.textContent = `${def.id} (${def.cost}G)`;
@@ -50,7 +51,7 @@ export function initSidebar(canvas, playModel, render) {
     sidebar.appendChild(btn);
 
     btn.addEventListener('click', () => {
-      // 選択状態の切り替え
+      // 選択ボタンのハイライト切り替え
       sidebar.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
       selectedDef = def;
@@ -63,13 +64,12 @@ export function initSidebar(canvas, playModel, render) {
   p.style.marginTop = '10px';
   p.style.fontSize = '14px';
   p.textContent = '選択中：';
-  const selectedSpan = document.createElement('span');
   selectedSpan.id = 'selected-tower';
   selectedSpan.textContent = 'なし';
   p.appendChild(selectedSpan);
   sidebar.appendChild(p);
 
-  // キャンバスクリックでタワー設置
+  // Canvas クリックでタワー設置
   canvas.addEventListener('click', e => {
     if (!selectedDef) return;
 
@@ -81,11 +81,11 @@ export function initSidebar(canvas, playModel, render) {
     const col = Math.floor(mx / CONFIG.TILE_SIZE);
     const row = Math.floor(my / CONFIG.TILE_SIZE);
 
-    // 範囲外 or 道 or すでにタワーがある or ゴールド不足 は設置不可
+    // 設置不許可条件
     if (
       row < 0 || row >= CONFIG.MAP_ROWS ||
       col < 0 || col >= CONFIG.MAP_COLS ||
-      grid[row][col] === 1 ||
+      grid[row][col] === 1 ||  // 道上は不可
       playModel.towers.some(t => t.x === col*CONFIG.TILE_SIZE && t.y === row*CONFIG.TILE_SIZE) ||
       playModel.gold < selectedDef.cost
     ) return;
