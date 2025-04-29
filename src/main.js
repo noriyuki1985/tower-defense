@@ -2,7 +2,8 @@
 // ----------------------------------------------------
 // 画面生成・ゲームループ・入力まわりをまとめたエントリ
 // ----------------------------------------------------
-import { STAGE }                        from './config.js';
+import { createRandomStage } from './mapGenerator.js';
+const STAGE = createRandomStage();   // ← 毎回違うマップになる
 import { assetLoader, renderer }        from './renderer.js';
 import { initSidebar }                  from './ui/sidebar.js';
 import { updateHUD }                    from './ui/hud.js';
