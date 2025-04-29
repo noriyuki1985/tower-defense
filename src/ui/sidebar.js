@@ -5,7 +5,7 @@
 import { CONFIG, grid } from '../config.js';
 
 export function initSidebar(canvas, playModel, render) {
-  // サイドバーコンテナ
+  // サイドバーのコンテナ要素を作成
   const sidebar = document.createElement('div');
   sidebar.id = 'sidebar';
   Object.assign(sidebar.style, {
@@ -30,7 +30,6 @@ export function initSidebar(canvas, playModel, render) {
   CONFIG.TOWER_DEFINITIONS.forEach(def => {
     const btn = document.createElement('button');
     btn.textContent = `${def.id} (${def.cost}G)`;
-    btn.dataset.tower = def.id;
     Object.assign(btn.style, {
       width: '100%',
       marginBottom: '8px',
@@ -45,7 +44,7 @@ export function initSidebar(canvas, playModel, render) {
     sidebar.appendChild(btn);
 
     btn.addEventListener('click', () => {
-      // ボタンハイライト切替
+      // ボタンの選択状態を更新
       sidebar.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
       selectedDef = def;
@@ -53,7 +52,7 @@ export function initSidebar(canvas, playModel, render) {
     });
   });
 
-  // 選択中表示
+  // 選択中の表示
   const p = document.createElement('p');
   p.style.marginTop = '10px';
   p.style.fontSize = '14px';
@@ -63,24 +62,24 @@ export function initSidebar(canvas, playModel, render) {
   p.appendChild(selectedSpan);
   sidebar.appendChild(p);
 
-  // クリックでタワー設置
+  // Canvas クリックでタワーを設置
   canvas.addEventListener('click', e => {
     if (!selectedDef) return;
 
-    const rect   = canvas.getBoundingClientRect();
-    const scaleX = canvas.width  / rect.width;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
     const mx = (e.clientX - rect.left) * scaleX;
-    const my = (e.clientY - rect.top ) * scaleY;
+    const my = (e.clientY - rect.top) * scaleY;
     const col = Math.floor(mx / CONFIG.TILE_SIZE);
     const row = Math.floor(my / CONFIG.TILE_SIZE);
 
-    // 設置不許可条件
+    // 設置不可条件チェック
     if (
       row < 0 || row >= CONFIG.MAP_ROWS ||
       col < 0 || col >= CONFIG.MAP_COLS ||
       grid[row][col] === 1 ||  // 道上は不可
-      playModel.towers.some(t => t.x === col*CONFIG.TILE_SIZE && t.y === row*CONFIG.TILE_SIZE) ||
+      playModel.towers.some(t => t.x === col * CONFIG.TILE_SIZE && t.y === row * CONFIG.TILE_SIZE) ||
       playModel.gold < selectedDef.cost
     ) return;
 
