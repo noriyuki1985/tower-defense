@@ -1,90 +1,69 @@
 // src/renderer.js
-// ----------------------------------
-// 画像のロードと Canvas 描画ヘルパー
-// ----------------------------------
-import { CONFIG, STAGE } from './config.js';
+// --------------------------------------------------
+// Canvas 描画ヘルパー（ステージを外からセット可能に）
+// --------------------------------------------------
+import { assetLoader } from './rendererAssets.js'; // ← 画像ローダは分離済みと仮定
 
-export const assetLoader = {
-  images: {},
+let ctx   = null;
+let stage = null;          // ← 現在の STAGE を保持
 
-  loadImages() {
-    const keys = [
-      'tile_grass',
-      'tile_road',
-      ...CONFIG.ENEMY_DEFINITIONS.map((e) => e.spriteKey),
-      ...CONFIG.TOWER_DEFINITIONS.map((t) => t.spriteKey),
-      ...CONFIG.PROJECTILE_DEFINITIONS.map((p) => p.spriteKey)
-    ];
+export function initRenderer(canvasId, stageObj) {
+  const canvas = document.getElementById(canvasId);
+  canvas.width  = stageObj.map.cols * stageObj.map.tileSize;
+  canvas.height = stageObj.map.rows * stageObj.map.tileSize;
+  ctx   = canvas.getContext('2d');
+  stage = stageObj;
+}
 
-    return Promise.all(
-      keys.map((key) => {
-        let cat = 'tiles';
-        if (key.startsWith('enemy_')) cat = 'enemies';
-        if (key.startsWith('tower_')) cat = 'towers';
-        if (key.startsWith('proj_')) cat = 'projectiles';
+export function setStage(stageObj) { stage = stageObj; }
 
-        const img = new Image();
-        img.src = `${CONFIG.ASSETS_PATH}/${cat}/${key}.png`;
-        this.images[key] = img;
-        return new Promise((res) => (img.onload = res));
-      })
-    );
-  }
-};
+// ---------- 基本描画 ----------
+export function clear() {
+  ctx.clearRect(0, 0,
+    stage.map.cols * stage.map.tileSize,
+    stage.map.rows * stage.map.tileSize
+  );
+}
 
-export const renderer = {
-  ctx: null,
+export function drawTile(r, c) {
+  const key = stage.map.tiles[r][c] === 1 ? 'tile_road' : 'tile_grass';
+  ctx.drawImage(
+    assetLoader.images[key],
+    c * stage.map.tileSize,
+    r * stage.map.tileSize,
+    stage.map.tileSize,
+    stage.map.tileSize
+  );
+}
 
-  init(canvasId) {
-    const canvas = document.getElementById(canvasId);
-    canvas.width = STAGE.map.cols * STAGE.map.tileSize;
-    canvas.height = STAGE.map.rows * STAGE.map.tileSize;
-    this.ctx = canvas.getContext('2d');
-  },
+export function drawTower(t) {
+  ctx.drawImage(
+    assetLoader.images[t.spriteKey],
+    t.x, t.y,
+    stage.map.tileSize, stage.map.tileSize
+  );
+}
 
-  clear() {
-    this.ctx.clearRect(
-      0,
-      0,
-      STAGE.map.cols * STAGE.map.tileSize,
-      STAGE.map.rows * STAGE.map.tileSize
-    );
-  },
+export function drawEnemy(e) {
+  ctx.drawImage(
+    assetLoader.images[e.spriteKey],
+    e.x, e.y,
+    stage.map.tileSize, stage.map.tileSize
+  );
+}
 
-  drawTile(r, c) {
-    const key = STAGE.map.tiles[r][c] === 1 ? 'tile_road' : 'tile_grass';
-    this.ctx.drawImage(
-      assetLoader.images[key],
-      c * STAGE.map.tileSize,
-      r * STAGE.map.tileSize,
-      STAGE.map.tileSize,
-      STAGE.map.tileSize
-    );
-  },
+export function drawProjectile(p) {
+  ctx.drawImage(
+    assetLoader.images[p.spriteKey],
+    p.x, p.y,
+    stage.map.tileSize / 2, stage.map.tileSize / 2
+  );
+}
 
-  drawTower(t) {
-    this.ctx.drawImage(assetLoader.images[t.spriteKey], t.x, t.y, STAGE.map.tileSize, STAGE.map.tileSize);
-  },
-
-  drawEnemy(e) {
-    this.ctx.drawImage(assetLoader.images[e.spriteKey], e.x, e.y, STAGE.map.tileSize, STAGE.map.tileSize);
-  },
-
-  drawProjectile(p) {
-    this.ctx.drawImage(
-      assetLoader.images[p.spriteKey],
-      p.x,
-      p.y,
-      STAGE.map.tileSize / 2,
-      STAGE.map.tileSize / 2
-    );
-  },
-
-  drawClear() {
-    this.ctx.fillStyle = 'yellow';
-    this.ctx.font = '48px sans-serif';
-    const x = (STAGE.map.cols * STAGE.map.tileSize) / 2 - 80;
-    const y = (STAGE.map.rows * STAGE.map.tileSize) / 2;
-    this.ctx.fillText('クリア！', x, y);
-  }
-};
+export function drawClear() {
+  ctx.fillStyle = 'yellow';
+  ctx.font      = '48px sans-serif';
+  const x = (stage.map.cols * stage.map.tileSize) / 2 - 80;
+  const y = (stage.map.rows * stage.map.tileSize) / 2;
+  ctx.fillText('クリア！', x, y);
+}
