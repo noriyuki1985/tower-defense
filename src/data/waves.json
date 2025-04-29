@@ -1,1 +1,222 @@
-
+[
+  {
+    "waveNo": 1,
+    "delay": 2000,
+    "enemies": [
+      {
+        "type": "slime",
+        "count": 5,
+        "interval": 800
+      }
+    ]
+  },
+  {
+    "waveNo": 2,
+    "delay": 5000,
+    "enemies": [
+      {
+        "type": "orc_soldier",
+        "count": 6,
+        "interval": 800
+      }
+    ]
+  },
+  {
+    "waveNo": 3,
+    "delay": 8000,
+    "enemies": [
+      {
+        "type": "slime",
+        "count": 7,
+        "interval": 800
+      }
+    ]
+  },
+  {
+    "waveNo": 4,
+    "delay": 11000,
+    "enemies": [
+      {
+        "type": "orc_soldier",
+        "count": 8,
+        "interval": 800
+      }
+    ]
+  },
+  {
+    "waveNo": 5,
+    "delay": 14000,
+    "enemies": [
+      {
+        "type": "slime",
+        "count": 9,
+        "interval": 800
+      }
+    ]
+  },
+  {
+    "waveNo": 6,
+    "delay": 17000,
+    "enemies": [
+      {
+        "type": "orc_soldier",
+        "count": 10,
+        "interval": 800
+      }
+    ]
+  },
+  {
+    "waveNo": 7,
+    "delay": 20000,
+    "enemies": [
+      {
+        "type": "slime",
+        "count": 11,
+        "interval": 800
+      }
+    ]
+  },
+  {
+    "waveNo": 8,
+    "delay": 23000,
+    "enemies": [
+      {
+        "type": "orc_soldier",
+        "count": 12,
+        "interval": 800
+      }
+    ]
+  },
+  {
+    "waveNo": 9,
+    "delay": 26000,
+    "enemies": [
+      {
+        "type": "slime",
+        "count": 13,
+        "interval": 800
+      }
+    ]
+  },
+  {
+    "waveNo": 10,
+    "delay": 29000,
+    "enemies": [
+      {
+        "type": "orc_soldier",
+        "count": 14,
+        "interval": 800
+      }
+    ]
+  },
+  {
+    "waveNo": 11,
+    "delay": 32000,
+    "enemies": [
+      {
+        "type": "slime",
+        "count": 15,
+        "interval": 800
+      }
+    ]
+  },
+  {
+    "waveNo": 12,
+    "delay": 35000,
+    "enemies": [
+      {
+        "type": "orc_soldier",
+        "count": 16,
+        "interval": 800
+      }
+    ]
+  },
+  {
+    "waveNo": 13,
+    "delay": 38000,
+    "enemies": [
+      {
+        "type": "slime",
+        "count": 17,
+        "interval": 800
+      }
+    ]
+  },
+  {
+    "waveNo": 14,
+    "delay": 41000,
+    "enemies": [
+      {
+        "type": "orc_soldier",
+        "count": 18,
+        "interval": 800
+      }
+    ]
+  },
+  {
+    "waveNo": 15,
+    "delay": 44000,
+    "enemies": [
+      {
+        "type": "slime",
+        "count": 19,
+        "interval": 800
+      }
+    ]
+  },
+  {
+    "waveNo": 16,
+    "delay": 47000,
+    "enemies": [
+      {
+        "type": "orc_soldier",
+        "count": 20,
+        "interval": 800
+      }
+    ]
+  },
+  {
+    "waveNo": 17,
+    "delay": 50000,
+    "enemies": [
+      {
+        "type": "slime",
+        "count": 21,
+        "interval": 800
+      }
+    ]
+  },
+  {
+    "waveNo": 18,
+    "delay": 53000,
+    "enemies": [
+      {
+        "type": "orc_soldier",
+        "count": 22,
+        "interval": 800
+      }
+    ]
+  },
+  {
+    "waveNo": 19,
+    "delay": 56000,
+    "enemies": [
+      {
+        "type": "slime",
+        "count": 23,
+        "interval": 800
+      }
+    ]
+  },
+  {
+    "waveNo": 20,
+    "delay": 59000,
+    "enemies": [
+      {
+        "type": "orc_soldier",
+        "count": 24,
+        "interval": 800
+      }
+    ]
+  }
+]
