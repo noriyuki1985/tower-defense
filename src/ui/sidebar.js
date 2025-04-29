@@ -4,12 +4,6 @@
 // ----------------------------------
 import { CONFIG, grid } from '../config.js';
 
-/**
- * サイドバーを生成し、塔設置のクリック処理を登録
- * @param {HTMLCanvasElement} canvas
- * @param {object} playModel
- * @param {Function} render
- */
 export function initSidebar(canvas, playModel, render) {
   // サイドバーコンテナ
   const sidebar = document.createElement('div');
@@ -51,7 +45,7 @@ export function initSidebar(canvas, playModel, render) {
     sidebar.appendChild(btn);
 
     btn.addEventListener('click', () => {
-      // 選択ボタンのハイライト切り替え
+      // ボタンハイライト切替
       sidebar.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
       selectedDef = def;
@@ -69,11 +63,11 @@ export function initSidebar(canvas, playModel, render) {
   p.appendChild(selectedSpan);
   sidebar.appendChild(p);
 
-  // Canvas クリックでタワー設置
+  // クリックでタワー設置
   canvas.addEventListener('click', e => {
     if (!selectedDef) return;
 
-    const rect = canvas.getBoundingClientRect();
+    const rect   = canvas.getBoundingClientRect();
     const scaleX = canvas.width  / rect.width;
     const scaleY = canvas.height / rect.height;
     const mx = (e.clientX - rect.left) * scaleX;
