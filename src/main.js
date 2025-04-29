@@ -1,20 +1,21 @@
 // src/main.js
-import { CONFIG }            from './config.js';
-import { createRandomStage } from './mapGenerator.js';
-import * as renderer         from './renderer.js';
-import { assetLoader }       from './rendererAssets.js';
-import { initSidebar }       from './ui/sidebar.js';
-import { updateHUD }         from './ui/hud.js';
-import { scheduleWaves }     from './gameplay/wave.js';
 
-// ステージ管理
+import { CONFIG, loadConfig, waypoints } from './config.js';
+import { createRandomStage }             from './mapGenerator.js';
+import * as renderer                     from './renderer.js';
+import { assetLoader }                   from './rendererAssets.js';
+import { initSidebar }                   from './ui/sidebar.js';
+import { updateHUD }                     from './ui/hud.js';
+import { scheduleWaves }                 from './gameplay/wave.js';
+
+// ── ステージ管理 ─────────────────────
 let stageIndex   = 1;
-let STAGE;
+let STAGE        = null;
 let totalToSpawn = 0;
 let clearShown   = false;
 let gameOver     = false;
 
-// playModel 定義
+// ── プレイモデル ─────────────────────
 const playModel = {
   towers:      [],
   enemies:     [],
@@ -25,17 +26,16 @@ const playModel = {
   spawnEnemy(type) {
     const def = CONFIG.ENEMY_DEFINITIONS.find(e => e.id === type);
     const wp0 = STAGE.path.waypoints[0];
-    this.enemies.push({
-      ...def,
-      hp:   def.hp,
-      x:    wp0.c * STAGE.map.tileSize,
-      y:    wp0.r * STAGE.map.tileSize,
-      idx:  1
+    this.enemies.push({ ...def,
+      hp:def.hp,
+      x:wp0.c * STAGE.map.tileSize,
+      y:wp0.r * STAGE.map.tileSize,
+      idx:1
     });
   }
 };
 
-// WAVES_DEFS からステージごとの Waves を組み立て
+// ── ステージ切り替え ─────────────────
 function buildWavesForStage(idx) {
   return CONFIG.WAVES_DEFS.map(wd => ({
     waveNo: wd.waveNo,
@@ -48,9 +48,8 @@ function buildWavesForStage(idx) {
   }));
 }
 
-// 新ステージのセットアップ
 function setupStage(idx) {
-  STAGE = createRandomStage(idx);
+  STAGE = createRandomStage();
   renderer.initRenderer('game-canvas', STAGE);
   renderer.setStage(STAGE);
 
@@ -70,12 +69,12 @@ function setupStage(idx) {
 
   clearShown   = false;
   gameOver     = false;
-  totalToSpawn = STAGE.waves.reduce((sum, w) => sum + w.enemies[0].count, 0);
+  totalToSpawn = STAGE.waves.reduce((sum,w)=>sum+w.enemies.reduce((c,_)=>c+_.count,0),0);
 
   scheduleWaves(playModel, STAGE.waves);
 }
 
-// 描画
+// ── レンダリング ─────────────────────
 function render() {
   renderer.clear();
   for (let r = 0; r < STAGE.map.rows; r++) {
@@ -86,6 +85,7 @@ function render() {
   playModel.towers.forEach(t => renderer.drawTower(t));
   playModel.projectiles.forEach(p => renderer.drawProjectile(p));
   playModel.enemies.forEach(e => renderer.drawEnemy(e));
+
   updateHUD(playModel);
 
   if (gameOver) {
@@ -95,37 +95,29 @@ function render() {
     ctx.fillText('ゲームオーバー', 50, 50);
     return;
   }
-  if (clearShown) {
-    renderer.drawClear();
-  }
+  if (clearShown) renderer.drawClear();
 }
 
-// メインループ
+// ── ゲームループ ─────────────────────
 function gameLoop() {
   if (gameOver) return;
   const now = Date.now();
 
-  playModel.towers.forEach(t =>
-    t.tryShoot(playModel.enemies, now, playModel.projectiles)
-  );
+  playModel.towers.forEach(t => t.tryShoot(playModel.enemies, now, playModel.projectiles));
 
   for (let i = playModel.projectiles.length - 1; i >= 0; i--) {
     const p = playModel.projectiles[i], e = p.target;
-    if (!playModel.enemies.includes(e)) {
-      playModel.projectiles.splice(i, 1);
-      continue;
-    }
-    const dx = e.x - p.x, dy = e.y - p.y, dist = Math.hypot(dx, dy);
-    if (dist < p.speed) {
+    if (!playModel.enemies.includes(e)) { playModel.projectiles.splice(i,1); continue; }
+    const dx = e.x-p.x, dy=e.y-p.y, d=Math.hypot(dx,dy);
+    if (d < p.speed) {
       e.hp -= p.damage;
       if (e.hp <= 0) {
-        playModel.enemies.splice(playModel.enemies.indexOf(e), 1);
+        playModel.enemies.splice(playModel.enemies.indexOf(e),1);
         playModel.gold += e.reward;
       }
-      playModel.projectiles.splice(i, 1);
+      playModel.projectiles.splice(i,1);
     } else {
-      p.x += dx / dist * p.speed;
-      p.y += dy / dist * p.speed;
+      p.x += dx/d*p.speed; p.y += dy/d*p.speed;
     }
   }
 
@@ -134,26 +126,22 @@ function gameLoop() {
     const wp = STAGE.path.waypoints[e.idx];
     if (!wp) {
       playModel.lives--;
-      playModel.enemies.splice(i, 1);
+      playModel.enemies.splice(i,1);
       if (playModel.lives <= 0) gameOver = true;
       continue;
     }
-    const tx   = wp.c * STAGE.map.tileSize, ty = wp.r * STAGE.map.tileSize;
-    const dx   = tx - e.x, dy = ty - e.y, dist = Math.hypot(dx, dy);
+    const tx = wp.c*STAGE.map.tileSize, ty=wp.r*STAGE.map.tileSize;
+    const dx = tx-e.x, dy=ty-e.y, dist=Math.hypot(dx,dy);
     if (dist < e.speed) e.idx++;
-    else {
-      e.x += dx / dist * e.speed;
-      e.y += dy / dist * e.speed;
-    }
+    else { e.x+=dx/dist*e.speed; e.y+=dy/dist*e.speed; }
   }
 
   if (!clearShown &&
       playModel.spawned === totalToSpawn &&
-      playModel.enemies.length === 0 &&
-      playModel.lives > 0) {
+      playModel.enemies.length===0 &&
+      playModel.lives>0) {
     clearShown = true;
   }
-
   if (clearShown) {
     stageIndex++;
     setupStage(stageIndex);
@@ -163,22 +151,29 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
-// 初期化
-function init() {
-  const app    = document.getElementById('app');
+// ── 初期化 ───────────────────────────
+async function init() {
+  // JSON／設定を先に読み込む
+  await loadConfig();
+
+  // Canvas
+  const app = document.getElementById('app');
   const canvas = document.createElement('canvas');
-  canvas.id    = 'game-canvas';
+  canvas.id = 'game-canvas';
   canvas.width  = CONFIG.MAP_COLS * CONFIG.TILE_SIZE;
   canvas.height = CONFIG.MAP_ROWS * CONFIG.TILE_SIZE;
   app.appendChild(canvas);
 
+  // UI
   initSidebar(canvas, playModel, render);
 
-  assetLoader.loadImages().then(() => {
-    setupStage(stageIndex);
-    render();
-    requestAnimationFrame(gameLoop);
-  });
+  // 画像
+  await assetLoader.loadImages();
+
+  // 最初のステージ
+  setupStage(stageIndex);
+  render();
+  requestAnimationFrame(gameLoop);
 }
 
 if (document.readyState === 'loading') {
