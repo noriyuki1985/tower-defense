@@ -1,1 +1,21 @@
+[
+  {
+    "id": "archer_tower",
+    "cost": 100,
+    "range": 3,
+    "damage": 25,
+    "fireRate": 800,
+    "projectileType": "arrow",
+    "spriteKey": "tower_archer"
+  },
+  {
+    "id": "mage_tower",
+    "cost": 250,
+    "range": 3,
+    "damage": 40,
+    "fireRate": 1200,
+    "projectileType": "magic",
+    "spriteKey": "tower_mage"
+  }
+]
 
