@@ -2,13 +2,14 @@
 // ----------------------------------
 // Tower クラス
 // ----------------------------------
-import { STAGE, CONFIG } from '../config.js';
+import { CONFIG } from '../config.js';
 
 export class Tower {
   constructor(def, gridPos) {
     Object.assign(this, def);
-    this.x = gridPos.c * STAGE.map.tileSize;
-    this.y = gridPos.r * STAGE.map.tileSize;
+    // STAGE.map.tileSize → CONFIG.TILE_SIZE に変更
+    this.x = gridPos.c * CONFIG.TILE_SIZE;
+    this.y = gridPos.r * CONFIG.TILE_SIZE;
     this.lastFire = 0;
   }
 
@@ -20,7 +21,8 @@ export class Tower {
     const inRange = enemies.filter((e) => {
       const dx = e.x - this.x;
       const dy = e.y - this.y;
-      return Math.hypot(dx, dy) <= this.range * STAGE.map.tileSize;
+      // STAGE.map.tileSize → CONFIG.TILE_SIZE に変更
+      return Math.hypot(dx, dy) <= this.range * CONFIG.TILE_SIZE;
     });
 
     if (inRange.length === 0) return false;
@@ -32,12 +34,14 @@ export class Tower {
       return da < db ? a : b;
     });
 
+    // 弾定義はそのまま CONFIG から取得
     const pDef = CONFIG.PROJECTILE_DEFINITIONS.find((p) => p.id === this.projectileType);
 
     projectiles.push({
       spriteKey: pDef.spriteKey,
-      x: this.x + STAGE.map.tileSize / 4,
-      y: this.y + STAGE.map.tileSize / 4,
+      // 発射位置のオフセットも CONFIG.TILE_SIZE で計算
+      x: this.x + CONFIG.TILE_SIZE / 4,
+      y: this.y + CONFIG.TILE_SIZE / 4,
       speed: pDef.speed,
       damage: this.damage,
       target
