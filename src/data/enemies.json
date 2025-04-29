@@ -1,0 +1,17 @@
+[
+  {
+    "id": "slime",
+    "hp": 50,
+    "speed": 1.2,
+    "reward": 5,
+    "spriteKey": "enemy_slime"
+  },
+  {
+    "id": "orc_soldier",
+    "hp": 200,
+    "speed": 1.0,
+    "reward": 20,
+    "spriteKey": "enemy_orc_soldier"
+  }
+  // ← 追加したいキャラはここに一行追加
+]
