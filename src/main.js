@@ -1,33 +1,87 @@
-// src/main.js
-import { STAGE }           from './config.js';
-import { assetLoader, renderer } from './renderer.js';
-import { initSidebar }     from './ui/sidebar.js';
-import { updateHUD }       from './ui/hud.js';
-import { scheduleWaves }   from './gameplay/wave.js';
+// main.js で省略していた部分を以下で置き換え
 
-// 共有モデル
-const playModel = { towers:[], enemies:[], projectiles:[], gold:STAGE.initial.gold, lives:STAGE.initial.lives, spawned:0 };
-const totalToSpawn = STAGE.waves.reduce((s,w)=>s+w.enemies[0].count,0);
-let clearShown = false;
+// ------------------ 描画 ------------------
+function render(){
+  renderer.clear();
 
-// 描画・ゲームループはこれまでのコードをそのまま貼り付け
-function render(){ /* …省略… */ }
-function gameLoop(){ /* …省略… */ }
+  // 地形タイル
+  for(let r=0; r<STAGE.map.rows; r++){
+    for(let c=0; c<STAGE.map.cols; c++){
+      renderer.drawTile(r,c);
+    }
+  }
 
-// 初期化
-function init(){
-  const app = document.getElementById('app');
-  const canvas = document.createElement('canvas');
-  canvas.id = 'game-canvas';
-  app.appendChild(canvas);
-  renderer.init('game-canvas');
-  initSidebar(canvas, playModel, render);
-  assetLoader.loadImages().then(()=>{
-    scheduleWaves(playModel);
-    render();
-    requestAnimationFrame(gameLoop);
-  });
+  // タワー
+  playModel.towers.forEach(t => renderer.drawTower(t));
+
+  // プロジェクタイル
+  playModel.projectiles.forEach(p => renderer.drawProjectile(p));
+
+  // 敵
+  playModel.enemies.forEach(e => renderer.drawEnemy(e));
+
+  // HUD
+  updateHUD(playModel);
+
+  if(clearShown) renderer.drawClear();
 }
 
-if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init);
-else init();
+// ------------------ メインループ ------------------
+function gameLoop(){
+  const now = Date.now();
+
+  // タワー攻撃 & プロジェクタイル生成
+  playModel.towers.forEach(t => {
+    t.tryShoot(playModel.enemies, now, playModel.projectiles);
+  });
+
+  // プロジェクタイル移動＆ヒット判定
+  for(let i = playModel.projectiles.length-1; i>=0; i--){
+    const p = playModel.projectiles[i], e = p.target;
+    if(!playModel.enemies.includes(e)){   // ターゲットが死んだ
+      playModel.projectiles.splice(i,1);
+      continue;
+    }
+    const dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx,dy);
+    if(d < p.speed){
+      e.hp -= p.damage;
+      if(e.hp <= 0){
+        playModel.enemies.splice(playModel.enemies.indexOf(e),1);
+        playModel.gold += e.reward;
+      }
+      playModel.projectiles.splice(i,1);
+    }else{
+      p.x += dx/d * p.speed;
+      p.y += dy/d * p.speed;
+    }
+  }
+
+  // 敵移動
+  for(let i = playModel.enemies.length-1; i>=0; i--){
+    const e  = playModel.enemies[i];
+    const wp = STAGE.path.waypoints[e.idx];
+    if(!wp){                // ゴールに到達
+      playModel.lives--;
+      playModel.enemies.splice(i,1);
+      continue;
+    }
+    const tx = wp.c*STAGE.map.tileSize, ty = wp.r*STAGE.map.tileSize;
+    const dx = tx-e.x, dy = ty-e.y, dist = Math.hypot(dx,dy);
+    if(dist < e.speed) e.idx++;
+    else{
+      e.x += dx/dist * e.speed;
+      e.y += dy/dist * e.speed;
+    }
+  }
+
+  // クリア判定
+  if(!clearShown &&
+     playModel.spawned === totalToSpawn &&
+     playModel.enemies.length === 0 &&
+     playModel.lives > 0){
+    clearShown = true;
+  }
+
+  render();
+  requestAnimationFrame(gameLoop);
+}
