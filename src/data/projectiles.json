@@ -1,1 +1,13 @@
+[
+  {
+    "id": "arrow",
+    "speed": 4.0,
+    "spriteKey": "proj_arrow"
+  },
+  {
+    "id": "magic",
+    "speed": 3.0,
+    "spriteKey": "proj_magic_missile"
+  }
+]
 
