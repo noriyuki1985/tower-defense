@@ -1,24 +1,31 @@
 // src/main.js
 // ----------------------------------------------------
-// 画面生成・ゲームループ・入力まわりをまとめたエントリ
+//  エントリーポイント：ランダムマップ生成 + ゲームループ
 // ----------------------------------------------------
-import { createRandomStage } from './mapGenerator.js';
-const STAGE = createRandomStage();   // ← 毎回違うマップになる
-import { assetLoader, renderer }        from './renderer.js';
-import { initSidebar }                  from './ui/sidebar.js';
-import { updateHUD }                    from './ui/hud.js';
-import { scheduleWaves }                from './gameplay/wave.js';
+import { createRandomStage }  from './mapGenerator.js';
+import * as renderer          from './renderer.js';        // drawTile など名前空間 import
+import { assetLoader }        from './renderer.js';        // 画像ローダはそのまま流用
+
+import { initSidebar }        from './ui/sidebar.js';
+import { updateHUD }          from './ui/hud.js';
+import { scheduleWaves }      from './gameplay/wave.js';
+
+// ----------------------------
+// ステージをランダム生成
+// ----------------------------
+const STAGE = createRandomStage();   // ← 毎リロード違うマップ
+renderer.setStage(STAGE);            // レンダラーに渡す
 
 // ----------------------------
 // 共有ゲームステート
 // ----------------------------
 const playModel = {
-  towers:       [],
-  enemies:      [],
-  projectiles:  [],
-  gold:         STAGE.initial.gold,
-  lives:        STAGE.initial.lives,
-  spawned:      0            // wave.js が増やす
+  towers:      [],
+  enemies:     [],
+  projectiles: [],
+  gold:        STAGE.initial.gold,
+  lives:       STAGE.initial.lives,
+  spawned:     0                 // wave.js が増やす
 };
 
 const totalToSpawn = STAGE.waves
@@ -47,64 +54,62 @@ function render() {
   // HUD
   updateHUD(playModel);
 
-  // クリア表示
   if (clearShown) renderer.drawClear();
 }
 
 // ----------------------------
-// メインループ（60fps）
+// メインループ
 // ----------------------------
 function gameLoop() {
   const now = Date.now();
 
-  // ---- タワー攻撃 & 弾生成 ----
+  // タワー攻撃 & 弾生成
   playModel.towers.forEach(t =>
     t.tryShoot(playModel.enemies, now, playModel.projectiles)
   );
 
-  // ---- 弾移動 & ヒット判定 ----
+  // 弾移動 & ヒット判定
   for (let i = playModel.projectiles.length - 1; i >= 0; i--) {
     const p = playModel.projectiles[i];
     const e = p.target;
-    if (!playModel.enemies.includes(e)) {          // ターゲットが既に消滅
+    if (!playModel.enemies.includes(e)) {               // ターゲットが死んだ
       playModel.projectiles.splice(i, 1);
       continue;
     }
     const dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy);
-    if (d < p.speed) {                            // 命中
+    if (d < p.speed) {                                  // 命中
       e.hp -= p.damage;
       if (e.hp <= 0) {
         playModel.enemies.splice(playModel.enemies.indexOf(e), 1);
         playModel.gold += e.reward;
       }
       playModel.projectiles.splice(i, 1);
-    } else {                                      // 飛行中
+    } else {                                            // 飛翔中
       p.x += dx / d * p.speed;
       p.y += dy / d * p.speed;
     }
   }
 
-  // ---- 敵移動 ----
+  // 敵移動
   for (let i = playModel.enemies.length - 1; i >= 0; i--) {
     const e  = playModel.enemies[i];
     const wp = STAGE.path.waypoints[e.idx];
-    if (!wp) {                                   // ゴール到達
+    if (!wp) {                                         // ゴール到達
       playModel.lives--;
       playModel.enemies.splice(i, 1);
       continue;
     }
     const tx = wp.c * STAGE.map.tileSize;
     const ty = wp.r * STAGE.map.tileSize;
-    const dx = tx - e.x, dy = ty - e.y;
-    const dist = Math.hypot(dx, dy);
-    if (dist < e.speed) e.idx++;                 // 次ウェイポイントへ
+    const dx = tx - e.x, dy = ty - e.y, dist = Math.hypot(dx, dy);
+    if (dist < e.speed) e.idx++;
     else {
       e.x += dx / dist * e.speed;
       e.y += dy / dist * e.speed;
     }
   }
 
-  // ---- クリア判定 ----
+  // クリア判定
   if (!clearShown &&
       playModel.spawned === totalToSpawn &&
       playModel.enemies.length === 0 &&
@@ -126,14 +131,15 @@ function init() {
   canvas.id    = 'game-canvas';
   app.appendChild(canvas);
 
-  renderer.init('game-canvas');
+  // レンダラー初期化（ステージ情報付き）
+  renderer.initRenderer('game-canvas', STAGE);
 
-  // サイドバー（タワー設置 UI）
+  // タワー設置 UI
   initSidebar(canvas, playModel, render);
 
-  // アセットを読み込んでからゲーム開始
+  // 画像ロード後にゲーム開始
   assetLoader.loadImages().then(() => {
-    scheduleWaves(playModel);   // 敵スポーンをスケジュール
+    scheduleWaves(playModel);   // 敵スポーンを予約
     render();                   // 初回描画
     requestAnimationFrame(gameLoop);
   });
