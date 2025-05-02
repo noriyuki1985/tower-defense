@@ -8,14 +8,14 @@ import { initSidebar }           from './ui/sidebar.js';
 import { updateHUD }             from './ui/hud.js';
 import { scheduleWaves }         from './gameplay/wave.js';
 
-/** ── ステージ管理変数 ─────────────────────────────────── */
+// ── ステージ管理変数 ───────────────────────────────────
 let stageIndex   = 1;
 let STAGE        = null;
 let totalToSpawn = 0;
 let clearShown   = false;
 let gameOver     = false;
 
-/** ── ゲーム状態モデル ─────────────────────────────────── */
+// ── ゲーム状態モデル ───────────────────────────────────
 export const playModel = {
   towers:      [],
   enemies:     [],
@@ -60,26 +60,30 @@ function buildWavesForStage(idx) {
 }
 
 /**
- * 新ステージを生成し、モデルとレンダラを初期化
+ * 新ステージを生成し、モデルを初期化
+ * - 初回ステージでは INITIAL_GOLD／INITIAL_LIVES で上書き
+ * - 2 ステージ目以降は playModel.gold／playModel.lives を保持
  * @param {number} idx ステージ番号
  */
 function setupStage(idx) {
+  // ランダムマップ＆ウェイポイント生成
   STAGE = createRandomStage(idx);
   renderer.initRenderer('game-canvas', STAGE);
   renderer.setStage(STAGE);
 
-  // ステージに応じた波情報
+  // 波情報を組み立て
   STAGE.waves = buildWavesForStage(idx);
 
-  // 初回のみ初期値をリセット、それ以降は保持
+  // 資源のリセット／維持
   if (idx === 1) {
     playModel.gold  = CONFIG.INITIAL_GOLD;
     playModel.lives = CONFIG.INITIAL_LIVES;
   }
+  // HUD 用の STAGE.initial にも反映
   STAGE.initial.gold  = playModel.gold;
   STAGE.initial.lives = playModel.lives;
 
-  // モデルをクリア
+  // モデル配列をクリア
   playModel.towers      = [];
   playModel.enemies     = [];
   playModel.projectiles = [];
@@ -94,7 +98,7 @@ function setupStage(idx) {
     0
   );
 
-  // 敵出現をスケジュール
+  // 敵のスポーンをスケジュール
   scheduleWaves(playModel, STAGE.waves);
 }
 
@@ -104,22 +108,22 @@ function setupStage(idx) {
 function render() {
   renderer.clear();
 
-  // 地形タイル描画
+  // マップ
   for (let r = 0; r < STAGE.map.rows; r++) {
     for (let c = 0; c < STAGE.map.cols; c++) {
       renderer.drawTile(r, c);
     }
   }
 
-  // タワー・発射体・敵を描画
+  // タワー・発射体・敵
   playModel.towers.forEach(t => renderer.drawTower(t));
   playModel.projectiles.forEach(p => renderer.drawProjectile(p));
   playModel.enemies.forEach(e => renderer.drawEnemy(e));
 
-  // HUD 更新
+  // HUD
   updateHUD(playModel);
 
-  // ゲームオーバー表示
+  // ゲームオーバー
   if (gameOver) {
     const ctx = document.getElementById('game-canvas').getContext('2d');
     ctx.fillStyle = 'red';
@@ -154,8 +158,7 @@ function gameLoop() {
       playModel.projectiles.splice(i, 1);
       continue;
     }
-    const dx = e.x - p.x;
-    const dy = e.y - p.y;
+    const dx = e.x - p.x, dy = e.y - p.y;
     const d  = Math.hypot(dx, dy);
     if (d < p.speed) {
       e.hp -= p.damage;
@@ -182,8 +185,7 @@ function gameLoop() {
     }
     const tx = wp.c * STAGE.map.tileSize;
     const ty = wp.r * STAGE.map.tileSize;
-    const dx = tx - e.x;
-    const dy = ty - e.y;
+    const dx = tx - e.x, dy = ty - e.y;
     const dist = Math.hypot(dx, dy);
     if (dist < e.speed) {
       e.idx++;
@@ -203,7 +205,7 @@ function gameLoop() {
     clearShown = true;
   }
 
-  // 次ステージへ
+  // クリア後、新ステージへ（ゴールド／ライフは維持）
   if (clearShown) {
     stageIndex++;
     setupStage(stageIndex);
@@ -214,7 +216,7 @@ function gameLoop() {
 }
 
 /**
- * 初期化
+ * 初期化処理
  */
 async function init() {
   // JSON 設定を読み込む
@@ -228,7 +230,7 @@ async function init() {
   canvas.height = CONFIG.MAP_ROWS * CONFIG.TILE_SIZE;
   app.appendChild(canvas);
 
-  // サイドバーなど UI を初期化
+  // サイドバーなど UI 初期化
   initSidebar(canvas, playModel, render);
 
   // 画像読み込み
@@ -240,7 +242,7 @@ async function init() {
   requestAnimationFrame(gameLoop);
 }
 
-// ページロード時に init を呼び出し
+// ページロード完了後に初期化
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
 } else {
