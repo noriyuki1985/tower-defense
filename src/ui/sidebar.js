@@ -1,11 +1,17 @@
 // src/ui/sidebar.js
-// ----------------------------------
-// Tower Defense: サイドバー（タワー設置 UI）
-// ----------------------------------
-import { CONFIG, grid } from '../config.js';
 
+import { CONFIG, grid } from '../config.js';
+import { Tower }        from '../gameplay/tower.js';
+
+/**
+ * サイドバー（タワー設置 UI）を生成し、
+ * クリックでタワーを設置できるようにする
+ * @param {HTMLCanvasElement} canvas - ゲーム用キャンバス
+ * @param {object} playModel - ゲームモデル（towers, gold などを保持）
+ * @param {Function} render - 描画関数
+ */
 export function initSidebar(canvas, playModel, render) {
-  // サイドバーのコンテナ要素を作成
+  // サイドバー用の div を作成
   const sidebar = document.createElement('div');
   sidebar.id = 'sidebar';
   Object.assign(sidebar.style, {
@@ -13,24 +19,27 @@ export function initSidebar(canvas, playModel, render) {
     background: 'rgba(0,0,0,0.8)',
     borderLeft: '2px solid #fff',
     padding: '10px',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
+    color: '#fff',
+    fontFamily: 'sans-serif'
   });
   document.body.appendChild(sidebar);
 
   // 見出し
-  const h2 = document.createElement('h2');
-  h2.textContent = 'タワー設置';
-  h2.style.marginBottom = '10px';
-  h2.style.fontSize = '18px';
-  sidebar.appendChild(h2);
+  const header = document.createElement('h2');
+  header.textContent = 'タワー設置';
+  header.style.marginBottom = '10px';
+  header.style.fontSize = '18px';
+  sidebar.appendChild(header);
 
-  // タワー選択ボタン
+  // タワー選択ボタンを作成
   let selectedDef = null;
   const selectedSpan = document.createElement('span');
   CONFIG.TOWER_DEFINITIONS.forEach(def => {
-    const btn = document.createElement('button');
-    btn.textContent = `${def.id} (${def.cost}G)`;
-    Object.assign(btn.style, {
+    const button = document.createElement('button');
+    button.textContent = `${def.id} (${def.cost}G)`;
+    button.dataset.tower = def.id;
+    Object.assign(button.style, {
       width: '100%',
       marginBottom: '8px',
       padding: '8px',
@@ -41,57 +50,63 @@ export function initSidebar(canvas, playModel, render) {
       fontSize: '14px',
       boxSizing: 'border-box'
     });
-    sidebar.appendChild(btn);
+    sidebar.appendChild(button);
 
-    btn.addEventListener('click', () => {
-      // ボタンの選択状態を更新
-      sidebar.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
+    button.addEventListener('click', () => {
+      // ボタンの選択ハイライト
+      const buttons = sidebar.querySelectorAll('button');
+      buttons.forEach(b => b.classList.remove('selected'));
+      button.classList.add('selected');
       selectedDef = def;
       selectedSpan.textContent = def.id;
     });
   });
 
-  // 選択中の表示
-  const p = document.createElement('p');
-  p.style.marginTop = '10px';
-  p.style.fontSize = '14px';
-  p.textContent = '選択中：';
+  // 選択中のタワー表示
+  const info = document.createElement('p');
+  info.style.marginTop = '10px';
+  info.style.fontSize = '14px';
+  info.textContent = '選択中：';
   selectedSpan.id = 'selected-tower';
   selectedSpan.textContent = 'なし';
-  p.appendChild(selectedSpan);
-  sidebar.appendChild(p);
+  info.appendChild(selectedSpan);
+  sidebar.appendChild(info);
 
-  // Canvas クリックでタワーを設置
+  // キャンバスをクリックしたときのタワー設置処理
   canvas.addEventListener('click', e => {
-    if (!selectedDef) return;
+    if (!selectedDef) {
+      return;
+    }
 
+    // クリック位置をマップのグリッド座標に変換
     const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
+    const scaleX = canvas.width  / rect.width;
     const scaleY = canvas.height / rect.height;
     const mx = (e.clientX - rect.left) * scaleX;
-    const my = (e.clientY - rect.top) * scaleY;
+    const my = (e.clientY - rect.top)  * scaleY;
     const col = Math.floor(mx / CONFIG.TILE_SIZE);
     const row = Math.floor(my / CONFIG.TILE_SIZE);
 
-    // 設置不可条件チェック
+    // 設置禁止条件
     if (
-      row < 0 || row >= CONFIG.MAP_ROWS ||
-      col < 0 || col >= CONFIG.MAP_COLS ||
-      grid[row][col] === 1 ||  // 道上は不可
+      row < 0 ||
+      row >= CONFIG.MAP_ROWS ||
+      col < 0 ||
+      col >= CONFIG.MAP_COLS ||
+      grid[row][col] === 1 ||  // 道上は設置不可
       playModel.towers.some(t => t.x === col * CONFIG.TILE_SIZE && t.y === row * CONFIG.TILE_SIZE) ||
       playModel.gold < selectedDef.cost
-    ) return;
+    ) {
+      return;
+    }
 
-    // 設置処理
+    // ゴールドを減らし、Tower インスタンスを生成して追加
     playModel.gold -= selectedDef.cost;
-    playModel.towers.push({
-      ...selectedDef,
-      x: col * CONFIG.TILE_SIZE,
-      y: row * CONFIG.TILE_SIZE,
-      lastFire: 0
-    });
+    const tower = new Tower(selectedDef, { r: row, c: col });
+    playModel.towers.push(tower);
     selectedSpan.textContent = selectedDef.id;
+
+    // 再描画
     render();
   });
 }
