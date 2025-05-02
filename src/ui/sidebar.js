@@ -5,13 +5,14 @@ import { Tower }        from '../gameplay/tower.js';
 
 /**
  * サイドバー（タワー設置 UI）を生成し、
- * クリックでタワーを設置できるようにする
- * @param {HTMLCanvasElement} canvas - ゲーム用キャンバス
- * @param {object} playModel - ゲームモデル（towers, gold などを保持）
- * @param {Function} render - 描画関数
+ * クリックでタワーを設置できるようにします。
+ *
+ * @param {HTMLCanvasElement} canvas ゲーム用キャンバス要素
+ * @param {object} playModel ゲームのモデル (towers, gold, lives など)
+ * @param {Function} render 描画を実行する関数
  */
 export function initSidebar(canvas, playModel, render) {
-  // サイドバー用の div を作成
+  // サイドバーコンテナを作成
   const sidebar = document.createElement('div');
   sidebar.id = 'sidebar';
   Object.assign(sidebar.style, {
@@ -32,7 +33,7 @@ export function initSidebar(canvas, playModel, render) {
   header.style.fontSize = '18px';
   sidebar.appendChild(header);
 
-  // タワー選択ボタンを作成
+  // タワー選択ボタンの生成
   let selectedDef = null;
   const selectedSpan = document.createElement('span');
   CONFIG.TOWER_DEFINITIONS.forEach(def => {
@@ -53,9 +54,8 @@ export function initSidebar(canvas, playModel, render) {
     sidebar.appendChild(button);
 
     button.addEventListener('click', () => {
-      // ボタンの選択ハイライト
-      const buttons = sidebar.querySelectorAll('button');
-      buttons.forEach(b => b.classList.remove('selected'));
+      // ボタンの選択状態を切り替え
+      sidebar.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
       button.classList.add('selected');
       selectedDef = def;
       selectedSpan.textContent = def.id;
@@ -72,13 +72,11 @@ export function initSidebar(canvas, playModel, render) {
   info.appendChild(selectedSpan);
   sidebar.appendChild(info);
 
-  // キャンバスをクリックしたときのタワー設置処理
+  // キャンバスクリックでタワー設置処理
   canvas.addEventListener('click', e => {
-    if (!selectedDef) {
-      return;
-    }
+    if (!selectedDef) return;
 
-    // クリック位置をマップのグリッド座標に変換
+    // クリック位置をキャンバス内座標に変換
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width  / rect.width;
     const scaleY = canvas.height / rect.height;
@@ -87,13 +85,11 @@ export function initSidebar(canvas, playModel, render) {
     const col = Math.floor(mx / CONFIG.TILE_SIZE);
     const row = Math.floor(my / CONFIG.TILE_SIZE);
 
-    // 設置禁止条件
+    // 設置不可条件
     if (
-      row < 0 ||
-      row >= CONFIG.MAP_ROWS ||
-      col < 0 ||
-      col >= CONFIG.MAP_COLS ||
-      grid[row][col] === 1 ||  // 道上は設置不可
+      row < 0 || row >= CONFIG.MAP_ROWS ||
+      col < 0 || col >= CONFIG.MAP_COLS ||
+      grid[row][col] === 1 ||  // 道の上には設置できない
       playModel.towers.some(t => t.x === col * CONFIG.TILE_SIZE && t.y === row * CONFIG.TILE_SIZE) ||
       playModel.gold < selectedDef.cost
     ) {
