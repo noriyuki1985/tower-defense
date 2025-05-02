@@ -1,12 +1,12 @@
 // src/main.js
 
-import { CONFIG, loadConfig }    from './config.js';
-import { createRandomStage }      from './mapGenerator.js';
-import * as renderer              from './renderer.js';
-import { assetLoader }            from './rendererAssets.js';
-import { initSidebar }            from './ui/sidebar.js';
-import { updateHUD }              from './ui/hud.js';
-import { scheduleWaves }          from './gameplay/wave.js';
+import { CONFIG, loadConfig }   from './config.js';
+import { createRandomStage }     from './mapGenerator.js';
+import * as renderer             from './renderer.js';
+import { assetLoader }           from './rendererAssets.js';
+import { initSidebar }           from './ui/sidebar.js';
+import { updateHUD }             from './ui/hud.js';
+import { scheduleWaves }         from './gameplay/wave.js';
 
 /** ── ステージ管理変数 ─────────────────────────────────── */
 let stageIndex   = 1;
@@ -15,7 +15,7 @@ let totalToSpawn = 0;
 let clearShown   = false;
 let gameOver     = false;
 
-/** ── ゲーム状態を保持するモデル ───────────────────────────── */
+/** ── ゲーム状態モデル ─────────────────────────────────── */
 export const playModel = {
   towers:      [],
   enemies:     [],
@@ -45,7 +45,7 @@ export const playModel = {
 /**
  * CONFIG.WAVES_DEFS からステージごとの波情報を組み立てる
  * @param {number} idx ステージ番号
- * @returns {Array<{waveNo:number,delay:number,enemies:Array<{type:string,count:number,interval:number}>}>}
+ * @returns {Array}
  */
 function buildWavesForStage(idx) {
   return CONFIG.WAVES_DEFS.map(wd => ({
@@ -60,28 +60,26 @@ function buildWavesForStage(idx) {
 }
 
 /**
- * 新しいステージを生成し、モデル・レンダラを初期化
+ * 新ステージを生成し、モデルとレンダラを初期化
  * @param {number} idx ステージ番号
  */
 function setupStage(idx) {
-  // ステージデータを作成
   STAGE = createRandomStage(idx);
   renderer.initRenderer('game-canvas', STAGE);
   renderer.setStage(STAGE);
 
-  // 波情報をステージに合わせて再構成
+  // ステージに応じた波情報
   STAGE.waves = buildWavesForStage(idx);
 
-  // 初回ステージのみ INITIAL 値をセット、それ以降は現在の資源を維持
+  // 初回のみ初期値をリセット、それ以降は保持
   if (idx === 1) {
     playModel.gold  = CONFIG.INITIAL_GOLD;
     playModel.lives = CONFIG.INITIAL_LIVES;
   }
-  // STAGE.initial は HUD 描画時のリセット用
   STAGE.initial.gold  = playModel.gold;
   STAGE.initial.lives = playModel.lives;
 
-  // モデルをリセット
+  // モデルをクリア
   playModel.towers      = [];
   playModel.enemies     = [];
   playModel.projectiles = [];
@@ -90,9 +88,9 @@ function setupStage(idx) {
   clearShown   = false;
   gameOver     = false;
 
-  // ステージ内総出現数を計算
+  // 総スポーン数を計算
   totalToSpawn = STAGE.waves.reduce(
-    (sum, w) => sum + w.enemies.reduce((cnt, e) => cnt + e.count, 0),
+    (sum, w) => sum + w.enemies.reduce((c, e) => c + e.count, 0),
     0
   );
 
@@ -106,14 +104,14 @@ function setupStage(idx) {
 function render() {
   renderer.clear();
 
-  // 地形タイル
+  // 地形タイル描画
   for (let r = 0; r < STAGE.map.rows; r++) {
     for (let c = 0; c < STAGE.map.cols; c++) {
       renderer.drawTile(r, c);
     }
   }
 
-  // タワー・発射体・敵
+  // タワー・発射体・敵を描画
   playModel.towers.forEach(t => renderer.drawTower(t));
   playModel.projectiles.forEach(p => renderer.drawProjectile(p));
   playModel.enemies.forEach(e => renderer.drawEnemy(e));
@@ -148,7 +146,7 @@ function gameLoop() {
     t.tryShoot(playModel.enemies, now, playModel.projectiles)
   );
 
-  // 発射体移動・ヒット判定
+  // 発射体移動＆ヒット判定
   for (let i = playModel.projectiles.length - 1; i >= 0; i--) {
     const p = playModel.projectiles[i];
     const e = p.target;
@@ -156,10 +154,10 @@ function gameLoop() {
       playModel.projectiles.splice(i, 1);
       continue;
     }
-    const dx   = e.x - p.x;
-    const dy   = e.y - p.y;
-    const dist = Math.hypot(dx, dy);
-    if (dist < p.speed) {
+    const dx = e.x - p.x;
+    const dy = e.y - p.y;
+    const d  = Math.hypot(dx, dy);
+    if (d < p.speed) {
       e.hp -= p.damage;
       if (e.hp <= 0) {
         playModel.enemies.splice(playModel.enemies.indexOf(e), 1);
@@ -167,12 +165,12 @@ function gameLoop() {
       }
       playModel.projectiles.splice(i, 1);
     } else {
-      p.x += dx / dist * p.speed;
-      p.y += dy / dist * p.speed;
+      p.x += dx / d * p.speed;
+      p.y += dy / d * p.speed;
     }
   }
 
-  // 敵移動・ゴール判定
+  // 敵移動＆ライフ減少
   for (let i = playModel.enemies.length - 1; i >= 0; i--) {
     const e  = playModel.enemies[i];
     const wp = STAGE.path.waypoints[e.idx];
@@ -182,16 +180,16 @@ function gameLoop() {
       if (playModel.lives <= 0) gameOver = true;
       continue;
     }
-    const tx       = wp.c * STAGE.map.tileSize;
-    const ty       = wp.r * STAGE.map.tileSize;
-    const dx       = tx - e.x;
-    const dy       = ty - e.y;
-    const moveDist = Math.hypot(dx, dy);
-    if (moveDist < e.speed) {
+    const tx = wp.c * STAGE.map.tileSize;
+    const ty = wp.r * STAGE.map.tileSize;
+    const dx = tx - e.x;
+    const dy = ty - e.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist < e.speed) {
       e.idx++;
     } else {
-      e.x += dx / moveDist * e.speed;
-      e.y += dy / moveDist * e.speed;
+      e.x += dx / dist * e.speed;
+      e.y += dy / dist * e.speed;
     }
   }
 
@@ -205,7 +203,7 @@ function gameLoop() {
     clearShown = true;
   }
 
-  // クリア後、次ステージへ
+  // 次ステージへ
   if (clearShown) {
     stageIndex++;
     setupStage(stageIndex);
@@ -216,7 +214,7 @@ function gameLoop() {
 }
 
 /**
- * 初期化処理
+ * 初期化
  */
 async function init() {
   // JSON 設定を読み込む
@@ -242,7 +240,7 @@ async function init() {
   requestAnimationFrame(gameLoop);
 }
 
-// ページ読み込み後に初期化を実行
+// ページロード時に init を呼び出し
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
 } else {
